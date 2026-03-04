@@ -4,7 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentTransaction } from './payment/entities/payment-transaction.entity';
 import { TransactionsModule } from './transactions/transactions.module';
-import {UsersModule} from './users/users.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
 
 @Module({
@@ -19,11 +20,10 @@ import { User } from './users/entities/user.entity';
       autoLoadEntities: true,
       synchronize: true,
       entities: [PaymentTransaction, User],
-      
-      
     }),
     TransactionsModule,
     UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
