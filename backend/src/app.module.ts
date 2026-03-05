@@ -6,6 +6,7 @@ import { PaymentTransaction } from './payment/entities/payment-transaction.entit
 import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { PaymentModule } from './payment/payment.module';
 import { User } from './users/entities/user.entity';
 
 @Module({
@@ -24,6 +25,7 @@ import { User } from './users/entities/user.entity';
     TransactionsModule,
     UsersModule,
     AuthModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

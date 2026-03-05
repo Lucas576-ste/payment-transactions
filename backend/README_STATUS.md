@@ -2,139 +2,177 @@
 
 **Status:** Em desenvolvimento
 
-Projeto fullstack de pagamentos com autenticação JWT, consumo de API externa e integração completa entre frontend e backend. O objetivo é aprender passo a passo, com foco em arquitetura profissional e boas práticas.
-
-## Objetivo
-
-Construir uma aplicação que permita:
-- Cadastro e login de usuários com JWT
-- Consumo de uma API externa de pagamentos no backend
-- Persistência de usuários e dados consumidos no PostgreSQL
-- Exposição de dados para o frontend com rotas protegidas
-
-## Stack obrigatória
-
-**Frontend**
-- React
-- TypeScript
-- TailwindCSS
-- Axios
-- React Router
-
-**Backend**
-- NestJS
-- TypeScript
-- PostgreSQL
-- JWT Authentication
-- bcrypt
-
-**Arquitetura backend**
-- Controller
-- Service
-- Module
-- DTO
-
-## Telas obrigatórias
-
-1. **Login** — autenticação e persistência do token
-2. **Registro** — criação de conta
-3. **Dashboard** — listagem, filtro, loading e erro
-4. **Detalhes** — visão completa de um item
-
-## Concluídos
-
-**Backend — base**
-- [x] Estrutura inicial do backend configurada
-- [x] Conexão com PostgreSQL configurada no TypeORM
-- [x] Entidade `PaymentTransaction` criada
-- [x] Módulo `Transactions` (entidade `Transaction`, service, controller)
-
-**Backend — usuários e registro**
-- [x] Entidade `User` criada (id, name, email, password)
-- [x] Módulo de usuários (`UsersModule`, `UsersService`, `UsersController`)
-- [x] Registro de usuário com hash de senha (bcrypt)
-- [x] DTO `CreateUserDto` com validação (class-validator)
-- [x] Rota POST `/users` para criação de conta
-
-**Backend — autenticação e JWT**
-- [x] Módulo `Auth` (`AuthModule`, `AuthService`, `AuthController`)
-- [x] DTO `LoginDto` e POST `/auth/login` retornando `{ access_token }`
-- [x] Login com JWT (validação de senha com bcrypt, emissão de token)
-- [x] JWT Guard (`JwtStrategy`, `JwtAuthGuard`) e Passport
-- [x] Rotas `/transactions` (GET e POST) protegidas com JWT
-
-## Pendentes
-
-**Backend**
-- [ ] Consumir API externa de pagamentos via Axios
-- [ ] Mapear dados externos para `PaymentTransaction` e persistir no PostgreSQL
-- [ ] Expor rota protegida para listagem de payment transactions (ex.: GET `/payment-transactions`)
-
-**Próxima etapa ao retomar:** Hora 3 — API externa (instalar axios, criar serviço que chama a API, mapear para `PaymentTransaction`, persistir no PostgreSQL, expor GET protegido).
-
-**Frontend**
-- [ ] Setup React + TypeScript + TailwindCSS
-- [ ] Implementar autenticação (login/registro)
-- [ ] Armazenar token JWT
-- [ ] Consumir backend via Axios
-- [ ] Dashboard com listagem, filtro, loading e erro
-- [ ] Tela de detalhes
-
-## Guia passo a passo (aprox. 5 horas)
-
-### Hora 1 — Base do backend
-- [x] 1. Confirmar banco `payment_transaction` no PostgreSQL.
-- [x] 2. Garantir TypeORM conectado no NestJS.
-- [x] 3. Criar entidades `User` e `PaymentTransaction`.
-- [x] 4. Criar módulos `Auth`, `Users`, `Transactions`.
-
-### Hora 2 — Autenticação
-- [x] 1. Criar DTOs de registro e login.
-- [x] 2. Implementar `AuthService` e `AuthController`.
-- [x] 3. Hash de senha com bcrypt.
-- [x] 4. Login retorna JWT.
-- [x] 5. Proteger rotas com JWT Guard.
-
-### Hora 3 — API externa
-- [ ] 1. Criar serviço para consumo da API externa (Axios).
-- [ ] 2. Mapear dados externos para `PaymentTransaction`.
-- [ ] 3. Persistir no PostgreSQL.
-- [ ] 4. Expor rota protegida para listagem.
-
-### Hora 4 — Frontend base
-- [ ] 1. Criar projeto React + TypeScript + TailwindCSS.
-- [ ] 2. Configurar Axios com baseURL.
-- [ ] 3. Criar páginas de Login e Registro.
-- [ ] 4. Configurar rotas com React Router.
-
-### Hora 5 — Dashboard e detalhes
-- [ ] 1. Dashboard consumindo o backend.
-- [ ] 2. Implementar filtro, loading e erro.
-- [ ] 3. Tela de detalhes completa.
-- [ ] 4. Guard de rota no frontend.
+Projeto fullstack de **cobranças**: usuário se registra, faz login, cria cobranças para enviar (ex.: link por WhatsApp). Quem recebe vê pendente; ao pagar ou passar do prazo, o status é atualizado. Upload de arquivos (comprovante/anexo) via MinIO (S3).
 
 ---
 
-## Análise do projeto
+## Visão do produto
 
-**Faz sentido?** Sim. O projeto está coerente como mini fullstack de aprendizado: autenticação JWT, consumo de API externa, PostgreSQL e frontend com React. A divisão em módulos (Users, Transactions) e o uso de DTOs seguem boas práticas.
+1. Usuário **registra** e **loga**.
+2. No **Dashboard** cria **cobrança**: valor, descrição, destinatário, vencimento → gera **link** (e "Compartilhar no WhatsApp").
+3. Quem recebe o link vê status **pendente**.
+4. Pagamento feito → **pago**; passou do vencimento → **vencido**.
+5. **Upload** (MinIO/S3): comprovante ou anexo da cobrança.
 
-### Pontos de atenção
+**Status da cobrança:** `pending` | `paid` | `expired`
 
-| Item | Situação | Recomendação |
-|------|----------|--------------|
-| **Duas entidades de transação** | Existem `PaymentTransaction` (payment_transactions) e `Transaction` (transactions). O módulo atual usa só `Transaction`. O objetivo é persistir dados da API externa em `PaymentTransaction`. | Ao implementar a API externa (Hora 3), usar `PaymentTransaction` no fluxo (mapear e persistir). Decidir se `Transaction` vira histórico genérico ou se tudo unifica em uma entidade. |
-| **Validação de DTO** | `CreateUserDto` usa `class-validator`, mas não há `ValidationPipe` global no `main.ts`. | Ativar no bootstrap: `app.useGlobalPipes(new ValidationPipe());` para que as validações do DTO rodem. |
-| **Email único** | A entidade `User` não define `email` como único. | Usar `@Column({ unique: true })` em `email` e tratar conflito no `UsersService` (ex.: `BadRequestException` se email já existir). |
-| **Credenciais no código** | Senha do banco está fixa em `app.module.ts`. | Usar variáveis de ambiente (ex.: `process.env.DATABASE_PASSWORD`, `DATABASE_URL`) e um `.env` (e manter `.env` no `.gitignore`). |
-| **Dependências do backend** | O código usa `bcrypt` e `class-validator`; conferir se estão em `backend/package.json`. | Garantir no `backend`: `bcrypt`, `class-validator`, `@types/bcrypt` (dev). Assim o backend roda com `npm install` só na pasta backend. |
+---
 
-### Melhorias sugeridas para acrescentar
+## Stack
 
-- [x] **ValidationPipe** global em `main.ts` para validação dos DTOs.
-- [x] **Email único** na entidade `User` e tratamento de duplicata no registro (ConflictException).
-- [x] **Dependências** `bcrypt`, `class-validator` e `@types/bcrypt` no `backend/package.json`.
-- [ ] **Variáveis de ambiente** para banco (e depois para JWT secret).
-- [x] **AuthModule** com `AuthService` e `AuthController` (login retornando JWT).
-- [x] **Proteger** `GET/POST /transactions` com JWT Guard.
-- [ ] (Opcional) **DTO de resposta** sem expor `password` (ex.: `UserResponseDto` ou `@Exclude()` no campo).
+| Camada | Tecnologias |
+|--------|-------------|
+| Frontend | React, TypeScript, TailwindCSS, Axios, React Router |
+| Backend | NestJS, TypeScript, PostgreSQL, JWT, bcrypt |
+| Arquivos | MinIO (S3), Docker Compose |
+| Arquitetura | Controller, Service, Module, DTO |
+
+---
+
+## Telas
+
+| Feito | Tela | Descrição |
+|:----:|------|-----------|
+| [x] | **Login** | Autenticação, token. |
+| [x] | **Registro** | Criação de conta. |
+| [ ] | **Dashboard** | Lista minhas cobranças, filtro (pendente/pago/vencido), botão "Nova cobrança". |
+| [ ] | **Detalhes** | Cobrança completa; criador vê anexos; link público: ver + upload comprovante / "Marcar como pago". |
+| [ ] | **Criar cobrança** | Formulário (valor, descrição, destinatário, vencimento, anexo). Link + WhatsApp. |
+| [ ] | **Perfil** (opcional) | Nome, senha, foto. |
+
+---
+
+## Concluído
+
+### Backend
+
+| Feito | Item |
+|:----:|------|
+| [x] | NestJS + TypeORM + PostgreSQL |
+| [x] | Entidades: User, PaymentTransaction (sync API), Transaction |
+| [x] | Módulos: Auth, Users, Transactions, Payment |
+| [x] | Registro e login com JWT |
+| [x] | Rotas protegidas (JwtAuthGuard) |
+| [x] | GET `/payment-transactions`, POST `/payment-transactions/sync` |
+
+### Frontend
+
+| Feito | Item |
+|:----:|------|
+| [x] | Vite + React + TypeScript + TailwindCSS |
+| [x] | Axios (baseURL + interceptor token) |
+| [x] | Páginas Login e Registro |
+| [x] | React Router (/, /login, /register) |
+
+---
+
+## Pendente por prioridade
+
+**Legenda:** P1 = Alta (essencial) · P2 = Média · P3 = Baixa
+
+---
+
+### P1 — Backend: Cobranças (fluxo principal)
+
+| Feito | Item |
+|:----:|------|
+| [ ] | Entidade **Cobrança**: id, userId, amount, description, recipient, dueDate, status (pending/paid/expired), publicSlug ou publicId, createdAt, updatedAt |
+| [ ] | Módulo **Cobranças**: Controller, Service, DTOs |
+| [ ] | POST criar cobrança (protegido) |
+| [ ] | GET listar minhas cobranças (protegido) |
+| [ ] | GET por id (protegido) |
+| [ ] | GET por slug/id público (rota sem JWT) |
+| [ ] | Regra vencimento: se pending e dueDate < hoje → expired |
+| [ ] | PATCH/POST marcar como pago (público ou com token no link) |
+
+### P1 — Frontend: Dashboard e cobranças
+
+| Feito | Item |
+|:----:|------|
+| [ ] | **Guard de rota**: redirecionar não logado para /login |
+| [ ] | Página **Dashboard**: GET cobranças, lista, filtro por status, loading/erro |
+| [ ] | Botão "Nova cobrança" → rota de criação |
+| [ ] | Página **Criar cobrança**: formulário, POST, exibir link + botão WhatsApp |
+| [ ] | Página **Detalhes**: visão criador (autenticado) e visão pública (por link) |
+| [ ] | Na página pública: upload comprovante e/ou "Marcar como pago" |
+
+### P2 — Backend: Docker e MinIO (upload)
+
+| Feito | Item |
+|:----:|------|
+| [ ] | `docker-compose.yml` com **postgres** e **minio** (5432, 9000, 9001) |
+| [ ] | Bucket `uploads` no MinIO (Console :9001 ou via código) |
+| [ ] | Client S3 no NestJS (`@aws-sdk/client-s3` ou `minio`) |
+| [ ] | Config endpoint MinIO (env: endpoint, port, access key, secret, bucket) |
+| [ ] | Serviço upload: multipart → key (ex. receipts/{id}/{file}) → PutObject MinIO |
+| [ ] | Referência no banco: attachmentKey/receiptKey na Cobrança ou entidade Anexo/Comprovante |
+| [ ] | Rota POST upload (anexo: protegida; comprovante: pública ou token) |
+
+### P2 — Frontend: Upload
+
+| Feito | Item |
+|:----:|------|
+| [ ] | Input file em **Criar cobrança** (anexo opcional) |
+| [ ] | Input file na **página pública** do link (comprovante) |
+| [ ] | Envio multipart para o backend |
+
+### P3 — Melhorias e opcionais
+
+| Feito | Item |
+|:----:|------|
+| [ ] | Variáveis de ambiente para banco e JWT (e MinIO) |
+| [ ] | (Opcional) DTO de resposta sem campo `password` |
+| [ ] | (Opcional) Página **Perfil**: editar nome/senha, upload avatar |
+
+---
+
+## Referência: Docker Compose
+
+`docker-compose.yml` na raiz — exemplo com Postgres e MinIO:
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: payment_transaction
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [minio_data:/data]
+
+volumes:
+  postgres_data:
+  minio_data:
+```
+
+Backend: TypeORM em `localhost:5432`; MinIO via env (endpoint, port, keys, bucket).
+
+---
+
+## Próxima etapa
+
+**P1 Backend:** criar entidade Cobrança e módulo Cobranças (CRUD + rota pública + marcar pago/vencido).  
+Depois **P1 Frontend:** guard, Dashboard, Criar cobrança, Detalhes.  
+Em seguida **P2:** Docker Compose + MinIO + upload (backend e front).
+
+---
+
+## Pontos de atenção
+
+| Item | Recomendação |
+|------|--------------|
+| Cobrança vs PaymentTransaction | Nova entidade Cobrança para fluxo “cobrança criada por mim”; manter PaymentTransaction para sync externo se quiser. |
+| Validação | Manter ValidationPipe; validar DTOs de cobrança e tipo/tamanho de arquivo no upload. |
+| Credenciais | Usar variáveis de ambiente em produção (banco, JWT, MinIO). |
